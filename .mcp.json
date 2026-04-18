@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "financial-advisor": {
+      "command": "python",
+      "args": ["-m", "mcp_server"],
+      "env": {
+        "ALPHAVANTAGE_API_KEY": "${ALPHAVANTAGE_API_KEY}",
+        "FINNHUB_API_KEY": "${FINNHUB_API_KEY}",
+        "FRED_API_KEY": "${FRED_API_KEY}"
+      }
+    }
+  }
+}
