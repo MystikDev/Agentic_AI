@@ -4,6 +4,15 @@ from __future__ import annotations
 from mcp.server.fastmcp import FastMCP
 
 from . import macro, news, portfolio, quotes, technicals
+from .finance import accounts as fin_accounts
+from .finance import analysis as fin_analysis
+from .finance import bills as fin_bills
+from .finance import budget as fin_budget
+from .finance import cashflow as fin_cashflow
+from .finance import csv_import as fin_csv
+from .finance import paychecks as fin_paychecks
+from .finance import plaid_client as fin_plaid
+from .finance import transactions as fin_txn
 
 mcp = FastMCP("financial-advisor")
 
@@ -54,6 +63,64 @@ mcp.tool()(portfolio.portfolio_risk)
 mcp.tool()(portfolio.add_watchlist)
 mcp.tool()(portfolio.remove_watchlist)
 mcp.tool()(portfolio.get_watchlist)
+
+# --- accounts (checking / savings / credit cards / loans) ---
+mcp.tool()(fin_accounts.add_account)
+mcp.tool()(fin_accounts.update_balance)
+mcp.tool()(fin_accounts.update_account)
+mcp.tool()(fin_accounts.remove_account)
+mcp.tool()(fin_accounts.list_accounts)
+mcp.tool()(fin_accounts.net_worth)
+
+# --- transactions + categorization ---
+mcp.tool()(fin_txn.add_transaction)
+mcp.tool()(fin_txn.list_transactions)
+mcp.tool()(fin_txn.categorize_transaction)
+mcp.tool()(fin_txn.add_category_rule)
+mcp.tool()(fin_txn.auto_categorize_all)
+mcp.tool()(fin_txn.uncategorized_summary)
+
+# --- CSV import ---
+mcp.tool()(fin_csv.import_csv)
+
+# --- Plaid ---
+mcp.tool()(fin_plaid.plaid_create_link_token)
+mcp.tool()(fin_plaid.plaid_exchange_public_token)
+mcp.tool()(fin_plaid.plaid_list_items)
+mcp.tool()(fin_plaid.plaid_remove_item)
+mcp.tool()(fin_plaid.plaid_get_balances)
+mcp.tool()(fin_plaid.plaid_sync_transactions)
+
+# --- paychecks ---
+mcp.tool()(fin_paychecks.add_paycheck)
+mcp.tool()(fin_paychecks.list_paychecks)
+mcp.tool()(fin_paychecks.paycheck_summary)
+mcp.tool()(fin_paychecks.remove_paycheck)
+
+# --- bills + subscriptions ---
+mcp.tool()(fin_bills.add_bill)
+mcp.tool()(fin_bills.remove_bill)
+mcp.tool()(fin_bills.list_bills)
+mcp.tool()(fin_bills.upcoming_bills)
+mcp.tool()(fin_bills.detect_recurring)
+mcp.tool()(fin_bills.subscription_audit)
+
+# --- budget ---
+mcp.tool()(fin_budget.set_budget)
+mcp.tool()(fin_budget.remove_budget)
+mcp.tool()(fin_budget.list_budgets)
+mcp.tool()(fin_budget.budget_status)
+
+# --- cashflow forecast ---
+mcp.tool()(fin_cashflow.cashflow_forecast)
+mcp.tool()(fin_cashflow.runway_analysis)
+
+# --- spending analytics ---
+mcp.tool()(fin_analysis.spending_by_category)
+mcp.tool()(fin_analysis.top_merchants)
+mcp.tool()(fin_analysis.income_vs_spending)
+mcp.tool()(fin_analysis.savings_rate)
+mcp.tool()(fin_analysis.monthly_summary)
 
 
 def main() -> None:

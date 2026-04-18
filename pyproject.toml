@@ -1,7 +1,7 @@
 [project]
 name = "agentic-financial-advisor"
 version = "0.1.0"
-description = "Personal financial advisor with an MCP server for market data, technicals, news, macro, and portfolio tracking."
+description = "Personal financial advisor: MCP server for market data, technicals, news, macro, portfolio tracking, plus personal finance (accounts, transactions, paychecks, bills, budget, cashflow)."
 requires-python = ">=3.10"
 dependencies = [
     "mcp>=1.2.0",

@@ -6,7 +6,10 @@
       "env": {
         "ALPHAVANTAGE_API_KEY": "${ALPHAVANTAGE_API_KEY}",
         "FINNHUB_API_KEY": "${FINNHUB_API_KEY}",
-        "FRED_API_KEY": "${FRED_API_KEY}"
+        "FRED_API_KEY": "${FRED_API_KEY}",
+        "PLAID_CLIENT_ID": "${PLAID_CLIENT_ID}",
+        "PLAID_SECRET": "${PLAID_SECRET}",
+        "PLAID_ENV": "${PLAID_ENV}"
       }
     }
   }
