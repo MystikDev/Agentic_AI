@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "FitCoach",
+    "slug": "fitcoach",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0B0F14"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.fitcoach.app"
+    },
+    "android": {
+      "package": "com.fitcoach.app"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "apiBaseUrl": "http://localhost:8787"
+    }
+  }
+}
