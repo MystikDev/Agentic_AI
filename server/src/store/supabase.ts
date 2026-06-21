@@ -5,8 +5,11 @@ import type {
   CreateWorkout,
   WorkoutSet,
   CreateMeal,
+  CreateMedication,
+  MedicationKind,
 } from "../types.js";
-import type { ConversationSummary, Workout, Meal } from "./shared.js";
+import type { ConversationSummary, Workout, Meal, Medication } from "./shared.js";
+import { startOfUtcDay } from "./shared.js";
 
 /**
  * Supabase-backed storage. Every function scopes by userId because the
@@ -212,4 +215,80 @@ export async function listMeals(userId: string, limit = 100): Promise<Meal[]> {
     carbsG: num(m.carbs_g),
     fatG: num(m.fat_g),
   }));
+}
+
+export async function createMedication(userId: string, m: CreateMedication): Promise<string> {
+  const { data, error } = await supabase
+    .from("medications")
+    .insert({
+      user_id: userId,
+      name: m.name,
+      kind: m.kind,
+      dosage: m.dosage ?? null,
+      schedule: m.schedule ?? null,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  return data.id as string;
+}
+
+export async function listMedications(userId: string): Promise<Medication[]> {
+  const { data: meds, error } = await supabase
+    .from("medications")
+    .select("id, name, kind, dosage, schedule, active")
+    .eq("user_id", userId)
+    .eq("active", true)
+    .order("created_at", { ascending: true });
+  if (error) throw new Error(error.message);
+  if (!meds?.length) return [];
+
+  const ids = meds.map((m) => m.id as string);
+  const { data: intakes, error: intakesError } = await supabase
+    .from("medication_intakes")
+    .select("medication_id, taken_at")
+    .eq("user_id", userId)
+    .in("medication_id", ids)
+    .order("taken_at", { ascending: false })
+    .limit(1000);
+  if (intakesError) throw new Error(intakesError.message);
+
+  const dayStart = startOfUtcDay();
+  const takenToday = new Map<string, number>();
+  const lastTaken = new Map<string, string>();
+  for (const it of intakes ?? []) {
+    const medId = it.medication_id as string;
+    const at = it.taken_at as string;
+    if (!lastTaken.has(medId)) lastTaken.set(medId, at); // first seen = most recent
+    if (at >= dayStart) takenToday.set(medId, (takenToday.get(medId) ?? 0) + 1);
+  }
+
+  return meds.map((m) => ({
+    id: m.id as string,
+    name: m.name as string,
+    kind: m.kind as MedicationKind,
+    dosage: (m.dosage as string | null) ?? null,
+    schedule: (m.schedule as string | null) ?? null,
+    active: m.active as boolean,
+    takenToday: takenToday.get(m.id as string) ?? 0,
+    lastTakenAt: lastTaken.get(m.id as string) ?? null,
+  }));
+}
+
+export async function ownsMedication(userId: string, medicationId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("medications")
+    .select("id")
+    .eq("id", medicationId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return Boolean(data);
+}
+
+export async function logIntake(userId: string, medicationId: string): Promise<void> {
+  const { error } = await supabase
+    .from("medication_intakes")
+    .insert({ user_id: userId, medication_id: medicationId });
+  if (error) throw new Error(error.message);
 }

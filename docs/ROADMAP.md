@@ -41,7 +41,10 @@ it as a sequence of thin, releasable slices rather than all at once.
   entry — integrate an existing nutrition API later rather than rebuild a food
   database. *Next:* daily macro targets, and coach access to logged meals.
 - Goals and streaks.
-- Medication & supplement tracking with reminders.
+- ✅ **Medication & supplement tracking:** track meds/supplements (name, kind,
+  dosage, schedule), log each dose with a Take button, and see today's adherence
+  ("Taken 2× today"). New "Meds" tab. *Next:* scheduled push reminders via
+  expo-notifications (native only; no-op on web), and edit/deactivate.
 - Reporting/export (PDF/CSV summaries).
 
 ## Phase 3 — Camera form + rep tracking

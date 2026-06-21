@@ -1,6 +1,13 @@
 import { randomUUID } from "node:crypto";
-import type { AthleteProfile, ChatMessage, CreateWorkout, CreateMeal } from "../types.js";
-import type { ConversationSummary, Workout, Meal } from "./shared.js";
+import type {
+  AthleteProfile,
+  ChatMessage,
+  CreateWorkout,
+  CreateMeal,
+  CreateMedication,
+} from "../types.js";
+import type { ConversationSummary, Workout, Meal, Medication } from "./shared.js";
+import { startOfUtcDay } from "./shared.js";
 
 /**
  * In-memory storage for demo / no-Supabase mode. Lets the app run with only an
@@ -31,6 +38,18 @@ interface MealRecord extends Meal {
   userId: string;
 }
 const meals: MealRecord[] = [];
+
+interface MedicationRecord {
+  id: string;
+  userId: string;
+  name: string;
+  kind: Medication["kind"];
+  dosage: string | null;
+  schedule: string | null;
+  active: boolean;
+}
+const medications: MedicationRecord[] = [];
+const intakes: { medicationId: string; userId: string; takenAt: string }[] = [];
 
 export async function getProfile(userId: string): Promise<AthleteProfile | null> {
   return profiles.get(userId) ?? null;
@@ -133,4 +152,47 @@ export async function listMeals(userId: string, limit = 100): Promise<Meal[]> {
       carbsG,
       fatG,
     }));
+}
+
+export async function createMedication(userId: string, m: CreateMedication): Promise<string> {
+  const id = randomUUID();
+  medications.push({
+    id,
+    userId,
+    name: m.name,
+    kind: m.kind,
+    dosage: m.dosage ?? null,
+    schedule: m.schedule ?? null,
+    active: true,
+  });
+  return id;
+}
+
+export async function listMedications(userId: string): Promise<Medication[]> {
+  const dayStart = startOfUtcDay();
+  return medications
+    .filter((m) => m.userId === userId && m.active)
+    .map((m) => {
+      const mine = intakes
+        .filter((it) => it.medicationId === m.id)
+        .sort((a, b) => b.takenAt.localeCompare(a.takenAt));
+      return {
+        id: m.id,
+        name: m.name,
+        kind: m.kind,
+        dosage: m.dosage,
+        schedule: m.schedule,
+        active: m.active,
+        takenToday: mine.filter((it) => it.takenAt >= dayStart).length,
+        lastTakenAt: mine[0]?.takenAt ?? null,
+      };
+    });
+}
+
+export async function ownsMedication(userId: string, medicationId: string): Promise<boolean> {
+  return medications.some((m) => m.id === medicationId && m.userId === userId);
+}
+
+export async function logIntake(userId: string, medicationId: string): Promise<void> {
+  intakes.push({ medicationId, userId, takenAt: new Date().toISOString() });
 }

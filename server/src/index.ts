@@ -6,6 +6,7 @@ import { profileRouter } from "./routes/profile.js";
 import { conversationsRouter } from "./routes/conversations.js";
 import { workoutsRouter } from "./routes/workouts.js";
 import { mealsRouter } from "./routes/meals.js";
+import { medicationsRouter } from "./routes/medications.js";
 import { supabaseConfigured } from "./supabase.js";
 
 const app = express();
@@ -20,6 +21,7 @@ app.use("/profile", profileRouter);
 app.use("/conversations", conversationsRouter);
 app.use("/workouts", workoutsRouter);
 app.use("/meals", mealsRouter);
+app.use("/medications", medicationsRouter);
 
 const port = Number(process.env.PORT ?? 8787);
 
