@@ -18,12 +18,18 @@ export type CoachRequest = {
   messages: ChatMessage[];
 };
 
-/** Fetch the human-readable label for an intensity (e.g. 9 -> "The Drill Sergeant"). */
-export async function fetchPersonaLabel(intensity: number): Promise<string> {
+export type VoiceProfile = { rate: number; pitch: number };
+export type Persona = { intensity: number; label: string; voice: VoiceProfile };
+
+/**
+ * Fetch the persona for an intensity: its label (e.g. 9 -> "The Drill Sergeant")
+ * and its text-to-speech delivery. The server is the single source of truth for
+ * both, so the dial and the voice never drift apart.
+ */
+export async function fetchPersona(intensity: number): Promise<Persona> {
   const res = await fetch(`${API_BASE_URL}/coach/persona?intensity=${intensity}`);
   if (!res.ok) throw new Error(`persona lookup failed (${res.status})`);
-  const data = (await res.json()) as { label: string };
-  return data.label;
+  return (await res.json()) as Persona;
 }
 
 /**

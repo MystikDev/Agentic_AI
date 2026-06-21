@@ -5,14 +5,25 @@ import type { AthleteProfile, Intensity } from "../types.js";
  * (1–10) drives the coach's entire voice, from a calm guide to a drill sergeant.
  *
  * Keeping this as pure prompt construction (no model call) makes it cheap to unit
- * test and tune, and keeps the dial deterministic.
+ * test and tune, and keeps the dial deterministic. The same bands also define how
+ * the coach *sounds* (text-to-speech delivery), so persona text and voice stay in
+ * one place — the app fetches the voice profile rather than hardcoding it.
  */
+
+/** Text-to-speech delivery for a persona band. Values are expo-speech params. */
+export interface VoiceProfile {
+  /** Speech rate multiplier (~0.1–2.0; 1.0 ≈ normal). Higher = faster/punchier. */
+  rate: number;
+  /** Voice pitch multiplier (~0.5–2.0; 1.0 ≈ normal). Higher = more energetic. */
+  pitch: number;
+}
 
 interface PersonaBand {
   /** Inclusive upper bound of this band. */
   max: Intensity;
   label: string;
   voice: string;
+  speech: VoiceProfile;
 }
 
 // Ordered low → high. We pick the first band whose `max` covers the intensity.
@@ -24,6 +35,7 @@ const BANDS: PersonaBand[] = [
       "Warm, calm, and patient. You speak softly and encourage without pressure. " +
       "You celebrate small wins, normalize rest, and never raise your voice. " +
       "Think of a gentle yoga instructor or a supportive physical therapist.",
+    speech: { rate: 0.85, pitch: 0.92 },
   },
   {
     max: 4,
@@ -31,6 +43,7 @@ const BANDS: PersonaBand[] = [
     voice:
       "Friendly, upbeat, and positive. You're the workout buddy who keeps things light " +
       "and fun. You nudge gently, use humor, and frame everything as 'we've got this.'",
+    speech: { rate: 0.95, pitch: 1.02 },
   },
   {
     max: 6,
@@ -39,6 +52,7 @@ const BANDS: PersonaBand[] = [
       "Focused and motivating, like a good high-school coach. You hold the athlete " +
       "accountable, give clear direction, and push them a little past their comfort " +
       "zone — but you're fair and explain the 'why' behind the work.",
+    speech: { rate: 1.0, pitch: 1.0 },
   },
   {
     max: 8,
@@ -47,6 +61,7 @@ const BANDS: PersonaBand[] = [
       "Intense, demanding, and high-energy. You expect effort and call out excuses. " +
       "You use short, punchy commands and competitive language. You're tough but you " +
       "clearly want the athlete to win.",
+    speech: { rate: 1.1, pitch: 1.06 },
   },
   {
     max: 10,
@@ -56,6 +71,7 @@ const BANDS: PersonaBand[] = [
       "for emphasis, and tolerate ZERO excuses. You're theatrical and over-the-top — this " +
       "is a performance the athlete opted into for motivation. Despite the bravado, you " +
       "never insult the person's worth, body, or identity — you attack the EXCUSES, not them.",
+    speech: { rate: 1.18, pitch: 1.1 },
   },
 ];
 
@@ -114,4 +130,9 @@ export function buildSystemPrompt(intensity: Intensity, profile?: AthleteProfile
 /** Exposed so the app can show the athlete which persona the dial currently selects. */
 export function personaLabel(intensity: Intensity): string {
   return bandFor(intensity).label;
+}
+
+/** Text-to-speech delivery for the persona at this intensity. */
+export function voiceProfile(intensity: Intensity): VoiceProfile {
+  return bandFor(intensity).speech;
 }

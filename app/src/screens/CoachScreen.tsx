@@ -14,9 +14,11 @@ import { theme } from "../theme";
 import { IntensityDial } from "../components/IntensityDial";
 import {
   streamCoachReply,
-  fetchPersonaLabel,
+  fetchPersona,
   type ChatMessage,
+  type VoiceProfile,
 } from "../api/coach";
+import { speak, stopSpeaking, drainSentences, DEFAULT_VOICE } from "../speech";
 
 const GREETING: ChatMessage = {
   role: "assistant",
@@ -29,22 +31,46 @@ export function CoachScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(true);
   const scrollRef = useRef<ScrollView>(null);
 
-  // Keep the persona label in sync with the dial. Debounced to avoid hammering the
-  // endpoint while the user drags the slider.
+  // Refs the streaming callback reads so it always sees current values (no stale closure).
+  const voiceRef = useRef<VoiceProfile>(DEFAULT_VOICE);
+  const voiceOnRef = useRef(true);
+  const speechBufRef = useRef("");
+
+  useEffect(() => {
+    voiceOnRef.current = voiceOn;
+  }, [voiceOn]);
+
+  // Keep the persona label + voice in sync with the dial. Debounced so dragging the
+  // slider doesn't hammer the endpoint.
   useEffect(() => {
     const t = setTimeout(() => {
-      fetchPersonaLabel(intensity)
-        .then(setLabel)
-        .catch(() => {/* keep last known label offline */});
+      fetchPersona(intensity)
+        .then((p) => {
+          setLabel(p.label);
+          voiceRef.current = p.voice;
+        })
+        .catch(() => {/* keep last known persona offline */});
     }, 150);
     return () => clearTimeout(t);
   }, [intensity]);
 
+  const toggleVoice = useCallback(() => {
+    setVoiceOn((on) => {
+      const next = !on;
+      if (!next) stopSpeaking();
+      return next;
+    });
+  }, []);
+
   const send = useCallback(async () => {
     const text = input.trim();
     if (!text || busy) return;
+
+    stopSpeaking(); // cut off any previous reply still being read
+    speechBufRef.current = "";
 
     const history: ChatMessage[] = [...messages, { role: "user", content: text }];
     setMessages([...history, { role: "assistant", content: "" }]);
@@ -55,6 +81,7 @@ export function CoachScreen() {
       await streamCoachReply(
         { intensity, messages: history.filter((m) => m.content.length > 0) },
         (delta) => {
+          // Render the token.
           setMessages((prev) => {
             const next = [...prev];
             next[next.length - 1] = {
@@ -64,8 +91,21 @@ export function CoachScreen() {
             return next;
           });
           scrollRef.current?.scrollToEnd({ animated: true });
+
+          // Speak complete sentences as they finish, so the coach talks live.
+          if (voiceOnRef.current) {
+            speechBufRef.current += delta;
+            const { sentences, rest } = drainSentences(speechBufRef.current);
+            speechBufRef.current = rest;
+            for (const s of sentences) speak(s, voiceRef.current);
+          }
         },
       );
+      // Flush any trailing partial sentence.
+      if (voiceOnRef.current && speechBufRef.current.trim()) {
+        speak(speechBufRef.current, voiceRef.current);
+      }
+      speechBufRef.current = "";
     } catch (err) {
       setMessages((prev) => {
         const next = [...prev];
@@ -86,7 +126,16 @@ export function CoachScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={styles.header}>
-        <Text style={styles.title}>FitCoach</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>FitCoach</Text>
+          <TouchableOpacity
+            style={[styles.voiceBtn, !voiceOn && styles.voiceBtnOff]}
+            onPress={toggleVoice}
+            accessibilityLabel={voiceOn ? "Mute coach voice" : "Unmute coach voice"}
+          >
+            <Text style={styles.voiceBtnText}>{voiceOn ? "🔊 Voice" : "🔇 Muted"}</Text>
+          </TouchableOpacity>
+        </View>
         <IntensityDial intensity={intensity} label={label} onChange={setIntensity} />
       </View>
 
@@ -138,7 +187,16 @@ export function CoachScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: theme.colors.bg },
   header: { paddingTop: theme.spacing(7), paddingHorizontal: theme.spacing(2), gap: theme.spacing(1.5) },
+  titleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   title: { color: theme.colors.text, fontSize: 28, fontWeight: "800", letterSpacing: 0.5 },
+  voiceBtn: {
+    backgroundColor: theme.colors.surfaceAlt,
+    borderRadius: theme.radius,
+    paddingHorizontal: theme.spacing(1.5),
+    paddingVertical: theme.spacing(0.75),
+  },
+  voiceBtnOff: { opacity: 0.6 },
+  voiceBtnText: { color: theme.colors.text, fontWeight: "700", fontSize: 13 },
   chat: { flex: 1, marginTop: theme.spacing(1) },
   chatContent: { padding: theme.spacing(2), gap: theme.spacing(1.5) },
   bubble: { maxWidth: "85%", borderRadius: theme.radius, padding: theme.spacing(1.5) },

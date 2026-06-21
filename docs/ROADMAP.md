@@ -10,8 +10,11 @@ it as a sequence of thin, releasable slices rather than all at once.
 - Backend proxy so the API key never ships in the app.
 
 ## Phase 1 — Make the coach feel alive
-- **Voice (TTS):** pipe the streamed reply into text-to-speech so the coach
-  actually *talks*. Per-persona voice settings (calm vs. shouty).
+- ✅ **Voice (TTS):** the streamed reply is spoken via `expo-speech`, sentence by
+  sentence as it arrives, with per-persona delivery (rate/pitch) served from the
+  persona engine so the dial and the voice never drift. Mute toggle in the header.
+  *Next:* premium neural voices (ElevenLabs/Azure) per persona for a real
+  drill-sergeant timbre, streamed as audio rather than on-device TTS.
 - **Production streaming transport:** React Native's `fetch` does not expose a
   streaming body on all platforms. Move to `react-native-sse` or a WebSocket so
   token streaming is reliable on device (the current client falls back to the

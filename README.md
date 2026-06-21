@@ -59,6 +59,11 @@ Safety guardrails (no medical advice, respect injuries, attack excuses not the
 person, encourage rest) are constant across the dial — tone changes, safety
 doesn't. The mapping lives in `server/src/coach/persona.ts`.
 
+The same engine also defines how the coach *sounds*: each band carries a
+text-to-speech profile (rate/pitch), served to the app so the coach speaks its
+replies out loud — slow and low for the Zen Guide, fast and punchy for the Drill
+Sergeant. Toggle it with the 🔊/🔇 button in the app header.
+
 ## Status & honest caveats
 
 - This is an early scaffold, not a shippable product. Auth, persistence, and a

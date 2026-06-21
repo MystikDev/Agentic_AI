@@ -1,20 +1,22 @@
 import { Router } from "express";
 import { CoachRequestSchema } from "../types.js";
 import { streamCoachReply } from "../coach/chat.js";
-import { personaLabel } from "../coach/persona.js";
+import { personaLabel, voiceProfile } from "../coach/persona.js";
 
 export const coachRouter = Router();
 
 /**
  * GET /coach/persona?intensity=7
- * Lightweight helper so the app can label the intensity dial without a model call.
+ * Lightweight helper so the app can label the intensity dial and pick the matching
+ * text-to-speech delivery — without a model call. Keeps persona definitions in one
+ * place (the server) rather than duplicated in the client.
  */
 coachRouter.get("/persona", (req, res) => {
   const intensity = Number(req.query.intensity);
   if (!Number.isInteger(intensity) || intensity < 1 || intensity > 10) {
     return res.status(400).json({ error: "intensity must be an integer 1–10" });
   }
-  res.json({ intensity, label: personaLabel(intensity) });
+  res.json({ intensity, label: personaLabel(intensity), voice: voiceProfile(intensity) });
 });
 
 /**
