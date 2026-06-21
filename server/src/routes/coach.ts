@@ -35,10 +35,13 @@ coachRouter.get("/persona", (req, res) => {
  * The server owns conversation state: it loads prior history and the athlete
  * profile from the database, persists the new user message and the assistant
  * reply, and streams the reply back as Server-Sent Events:
- *   event: meta   data: {"conversationId": "..."}   (once, first)
- *   event: token  data: {"text": "..."}             (many)
- *   event: done   data: {"text": "<full reply>"}
- *   event: error  data: {"message": "..."}
+ *   event: meta         data: {"conversationId": "..."}   (once, first)
+ *   event: token        data: {"text": "..."}             (many)
+ *   event: done         data: {"text": "<full reply>"}
+ *   event: coach_error  data: {"message": "..."}
+ *
+ * The error event is named `coach_error` (not `error`) so it doesn't collide with
+ * the reserved transport-error event in the app's SSE client.
  */
 coachRouter.post("/chat", requireAuth, async (req: AuthedRequest, res) => {
   const parsed = ChatTurnSchema.safeParse(req.body);
@@ -103,7 +106,7 @@ coachRouter.post("/chat", requireAuth, async (req: AuthedRequest, res) => {
   } catch (err) {
     if (!controller.signal.aborted) {
       const message = err instanceof Error ? err.message : "coaching failed";
-      send("error", { message });
+      send("coach_error", { message });
     }
   } finally {
     res.end();

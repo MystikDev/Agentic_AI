@@ -15,10 +15,11 @@ it as a sequence of thin, releasable slices rather than all at once.
   persona engine so the dial and the voice never drift. Mute toggle in the header.
   *Next:* premium neural voices (ElevenLabs/Azure) per persona for a real
   drill-sergeant timbre, streamed as audio rather than on-device TTS.
-- **Production streaming transport:** React Native's `fetch` does not expose a
-  streaming body on all platforms. Move to `react-native-sse` or a WebSocket so
-  token streaming is reliable on device (the current client falls back to the
-  final `done` event when no stream reader is available).
+- ✅ **Production streaming transport:** token streaming now goes over
+  `react-native-sse` (XHR-based EventSource with POST + auth headers), reliable on
+  iOS, Android, and web — replacing the fetch ReadableStream body that RN doesn't
+  expose on all platforms. The SSE error frame is named `coach_error` to avoid
+  colliding with the client's reserved transport-error event.
 - ✅ **Auth + persistence (Supabase):** email/password accounts; athlete profile
   and conversation history stored server-side in Postgres. The app authenticates
   with Supabase directly and sends its token to the backend, which verifies it and
