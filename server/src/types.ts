@@ -48,3 +48,26 @@ export interface CoachInvocation {
   profile?: AthleteProfile;
   messages: ChatMessage[];
 }
+
+// ---- Workout logging -------------------------------------------------------
+
+export const WorkoutSetSchema = z
+  .object({
+    exercise: z.string().min(1).max(80),
+    /** Omit for bodyweight movements. */
+    weight: z.number().min(0).max(2000).optional(),
+    reps: z.number().int().min(1).max(1000),
+  })
+  .strict();
+
+export const CreateWorkoutSchema = z
+  .object({
+    /** ISO timestamp; defaults to now on the server. */
+    performedAt: z.string().datetime().optional(),
+    notes: z.string().max(1000).optional(),
+    sets: z.array(WorkoutSetSchema).min(1).max(100),
+  })
+  .strict();
+
+export type WorkoutSet = z.infer<typeof WorkoutSetSchema>;
+export type CreateWorkout = z.infer<typeof CreateWorkoutSchema>;

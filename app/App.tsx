@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { SafeAreaView, StyleSheet, View, ActivityIndicator } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import type { Session } from "@supabase/supabase-js";
-import { CoachScreen } from "./src/screens/CoachScreen";
+import { MainTabs } from "./src/screens/MainTabs";
 import { AuthScreen } from "./src/auth/AuthScreen";
 import { supabase } from "./src/supabase";
 import { theme } from "./src/theme";
@@ -30,7 +30,7 @@ export default function App() {
           <ActivityIndicator color={theme.colors.accent} />
         </View>
       ) : session ? (
-        <CoachScreen />
+        <MainTabs />
       ) : (
         <AuthScreen />
       )}

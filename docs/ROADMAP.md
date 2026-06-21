@@ -32,7 +32,10 @@ it as a sequence of thin, releasable slices rather than all at once.
   persona engine's `profile` block (now persisted server-side).
 
 ## Phase 2 — Tracking hub
-- Workouts, sets/reps logging, progress charts.
+- ✅ **Workout logging:** log a session of sets (exercise / weight / reps, with
+  bodyweight support) and see your history, persisted per user. New "Workouts" tab
+  alongside the Coach. *Next:* progress charts (volume/PRs over time), edit/delete,
+  and letting the coach log workouts for you via a tool call.
 - Goals and streaks.
 - Lightweight diet logging (or integrate MyFitnessPal/Cronometer rather than
   rebuilding a food database).

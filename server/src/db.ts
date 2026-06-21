@@ -1,5 +1,5 @@
 import { supabase } from "./supabase.js";
-import type { AthleteProfile, ChatMessage } from "./types.js";
+import type { AthleteProfile, ChatMessage, CreateWorkout, WorkoutSet } from "./types.js";
 
 /**
  * Data access. Every function scopes by userId because the service-role client
@@ -113,4 +113,81 @@ export async function appendMessage(
 export function titleFrom(message: string): string {
   const t = message.trim().replace(/\s+/g, " ");
   return t.length <= 48 ? t : `${t.slice(0, 47)}…`;
+}
+
+// ---- Workouts --------------------------------------------------------------
+
+export interface Workout {
+  id: string;
+  performedAt: string;
+  notes: string | null;
+  sets: WorkoutSet[];
+}
+
+export async function createWorkout(userId: string, w: CreateWorkout): Promise<string> {
+  const { data, error } = await supabase
+    .from("workouts")
+    .insert({
+      user_id: userId,
+      performed_at: w.performedAt ?? new Date().toISOString(),
+      notes: w.notes ?? null,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  const workoutId = data.id as string;
+
+  const rows = w.sets.map((s, i) => ({
+    workout_id: workoutId,
+    user_id: userId,
+    exercise: s.exercise,
+    weight: s.weight ?? null,
+    reps: s.reps,
+    position: i,
+  }));
+  const { error: setsError } = await supabase.from("workout_sets").insert(rows);
+  if (setsError) {
+    // Best-effort cleanup so we don't leave an empty workout behind.
+    await supabase.from("workouts").delete().eq("id", workoutId).eq("user_id", userId);
+    throw new Error(setsError.message);
+  }
+  return workoutId;
+}
+
+export async function listWorkouts(userId: string, limit = 50): Promise<Workout[]> {
+  const { data: workouts, error } = await supabase
+    .from("workouts")
+    .select("id, performed_at, notes")
+    .eq("user_id", userId)
+    .order("performed_at", { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  if (!workouts?.length) return [];
+
+  const ids = workouts.map((w) => w.id as string);
+  const { data: sets, error: setsError } = await supabase
+    .from("workout_sets")
+    .select("workout_id, exercise, weight, reps, position")
+    .eq("user_id", userId)
+    .in("workout_id", ids)
+    .order("position", { ascending: true });
+  if (setsError) throw new Error(setsError.message);
+
+  const byWorkout = new Map<string, WorkoutSet[]>();
+  for (const s of sets ?? []) {
+    const list = byWorkout.get(s.workout_id) ?? [];
+    list.push({
+      exercise: s.exercise,
+      weight: s.weight == null ? undefined : Number(s.weight),
+      reps: s.reps,
+    });
+    byWorkout.set(s.workout_id, list);
+  }
+
+  return workouts.map((w) => ({
+    id: w.id as string,
+    performedAt: w.performed_at as string,
+    notes: (w.notes as string | null) ?? null,
+    sets: byWorkout.get(w.id as string) ?? [],
+  }));
 }

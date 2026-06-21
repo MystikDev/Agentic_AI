@@ -13,8 +13,9 @@ server/   Node + TypeScript backend. Holds the Anthropic + Supabase service keys
           runs the persona engine, streams coaching replies, and persists profile
           and conversation history. (The app never calls Claude directly — see
           docs/ARCHITECTURE.md for why.)
-app/      Expo (React Native) app for iOS + Android. Auth, chat UI, intensity dial.
-supabase/ Database schema (migrations) for auth + persistence.
+app/      Expo (React Native) app for iOS + Android. Auth, coach chat + intensity
+          dial, and a workout log (Coach / Workouts tabs).
+supabase/ Database schema (migrations) for auth, persistence, and workouts.
 docs/     Architecture, roadmap, and Supabase setup.
 ```
 

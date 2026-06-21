@@ -1,9 +1,6 @@
-import Constants from "expo-constants";
 import EventSource from "react-native-sse";
 import { authHeader } from "../supabase";
-
-const API_BASE_URL: string =
-  (Constants.expoConfig?.extra?.apiBaseUrl as string) ?? "http://localhost:8787";
+import { API_BASE_URL } from "./base";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 
