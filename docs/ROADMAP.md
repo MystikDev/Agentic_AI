@@ -36,9 +36,11 @@ it as a sequence of thin, releasable slices rather than all at once.
   bodyweight support) and see your history, persisted per user. New "Workouts" tab
   alongside the Coach. *Next:* progress charts (volume/PRs over time), edit/delete,
   and letting the coach log workouts for you via a tool call.
+- ✅ **Diet logging:** log meals with optional calories + macros; the Diet tab
+  groups entries by day with daily calorie totals. Deliberately lightweight manual
+  entry — integrate an existing nutrition API later rather than rebuild a food
+  database. *Next:* daily macro targets, and coach access to logged meals.
 - Goals and streaks.
-- Lightweight diet logging (or integrate MyFitnessPal/Cronometer rather than
-  rebuilding a food database).
 - Medication & supplement tracking with reminders.
 - Reporting/export (PDF/CSV summaries).
 

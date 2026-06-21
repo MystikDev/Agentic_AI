@@ -1,5 +1,11 @@
 import { supabase } from "./supabase.js";
-import type { AthleteProfile, ChatMessage, CreateWorkout, WorkoutSet } from "./types.js";
+import type {
+  AthleteProfile,
+  ChatMessage,
+  CreateWorkout,
+  WorkoutSet,
+  CreateMeal,
+} from "./types.js";
 
 /**
  * Data access. Every function scopes by userId because the service-role client
@@ -189,5 +195,56 @@ export async function listWorkouts(userId: string, limit = 50): Promise<Workout[
     performedAt: w.performed_at as string,
     notes: (w.notes as string | null) ?? null,
     sets: byWorkout.get(w.id as string) ?? [],
+  }));
+}
+
+// ---- Meals -----------------------------------------------------------------
+
+export interface Meal {
+  id: string;
+  eatenAt: string;
+  description: string;
+  calories: number | null;
+  proteinG: number | null;
+  carbsG: number | null;
+  fatG: number | null;
+}
+
+const num = (v: unknown): number | null => (v == null ? null : Number(v));
+
+export async function createMeal(userId: string, m: CreateMeal): Promise<string> {
+  const { data, error } = await supabase
+    .from("meals")
+    .insert({
+      user_id: userId,
+      eaten_at: m.eatenAt ?? new Date().toISOString(),
+      description: m.description,
+      calories: m.calories ?? null,
+      protein_g: m.proteinG ?? null,
+      carbs_g: m.carbsG ?? null,
+      fat_g: m.fatG ?? null,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  return data.id as string;
+}
+
+export async function listMeals(userId: string, limit = 100): Promise<Meal[]> {
+  const { data, error } = await supabase
+    .from("meals")
+    .select("id, eaten_at, description, calories, protein_g, carbs_g, fat_g")
+    .eq("user_id", userId)
+    .order("eaten_at", { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((m) => ({
+    id: m.id as string,
+    eatenAt: m.eaten_at as string,
+    description: m.description as string,
+    calories: num(m.calories),
+    proteinG: num(m.protein_g),
+    carbsG: num(m.carbs_g),
+    fatG: num(m.fat_g),
   }));
 }

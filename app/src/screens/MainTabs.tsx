@@ -3,8 +3,9 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { theme } from "../theme";
 import { CoachScreen } from "./CoachScreen";
 import { WorkoutsScreen } from "./WorkoutsScreen";
+import { DietScreen } from "./DietScreen";
 
-type Tab = "coach" | "workouts";
+type Tab = "coach" | "workouts" | "diet";
 
 /**
  * Minimal two-tab shell (no navigation library yet). The signed-in app is the
@@ -17,7 +18,13 @@ export function MainTabs() {
   return (
     <View style={styles.root}>
       <View style={styles.screen}>
-        {tab === "coach" ? <CoachScreen /> : <WorkoutsScreen />}
+        {tab === "coach" ? (
+          <CoachScreen />
+        ) : tab === "workouts" ? (
+          <WorkoutsScreen />
+        ) : (
+          <DietScreen />
+        )}
       </View>
       <View style={styles.tabBar}>
         <TabButton label="Coach" icon="🗣️" active={tab === "coach"} onPress={() => setTab("coach")} />
@@ -27,6 +34,7 @@ export function MainTabs() {
           active={tab === "workouts"}
           onPress={() => setTab("workouts")}
         />
+        <TabButton label="Diet" icon="🍎" active={tab === "diet"} onPress={() => setTab("diet")} />
       </View>
     </View>
   );

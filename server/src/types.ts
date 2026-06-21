@@ -71,3 +71,19 @@ export const CreateWorkoutSchema = z
 
 export type WorkoutSet = z.infer<typeof WorkoutSetSchema>;
 export type CreateWorkout = z.infer<typeof CreateWorkoutSchema>;
+
+// ---- Diet logging ----------------------------------------------------------
+
+export const CreateMealSchema = z
+  .object({
+    /** ISO timestamp; defaults to now on the server. */
+    eatenAt: z.string().datetime().optional(),
+    description: z.string().min(1).max(200),
+    calories: z.number().int().min(0).max(20000).optional(),
+    proteinG: z.number().min(0).max(2000).optional(),
+    carbsG: z.number().min(0).max(2000).optional(),
+    fatG: z.number().min(0).max(2000).optional(),
+  })
+  .strict();
+
+export type CreateMeal = z.infer<typeof CreateMealSchema>;
