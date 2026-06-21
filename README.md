@@ -24,6 +24,13 @@ Accounts, the athlete profile, and conversation history are backed by
 before running — or skip it to try the coach without persistence (the public
 persona endpoint works; authenticated features return `503`).
 
+## Hosted preview (public link, no terminal)
+
+Want to use it from your phone/browser without running anything? Deploy a hosted
+preview on Render — it stands up the backend + web app in demo mode, and the only
+secret you add is your Anthropic key. Step-by-step in
+[`docs/DEPLOY.md`](docs/DEPLOY.md). The blueprint lives in `render.yaml`.
+
 ## Try it in ~5 minutes (demo mode, no Supabase)
 
 Want to click around and give feedback without standing up a database? Run in

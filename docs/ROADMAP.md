@@ -62,8 +62,10 @@ it as a sequence of thin, releasable slices rather than all at once.
 - ✅ **Demo mode:** with Supabase unconfigured, the backend uses an in-memory
   store under a demo user and the app skips login — so the whole product runs with
   just an Anthropic key (data resets on restart). Storage is abstracted behind a
-  facade (`server/src/store/`) so the Supabase path is untouched. *Next:* a hosted
-  preview (deploy the backend + Expo web) for a shareable link.
+  facade (`server/src/store/`) so the Supabase path is untouched.
+- ✅ **Hosted preview:** `render.yaml` blueprint deploys the backend + Expo web
+  app (demo mode) for a public shareable link; only the Anthropic key is needed.
+  Build-time API URL injection via `app/app.config.js`. See `docs/DEPLOY.md`.
 
 ## Cross-cutting (start early, never "later")
 - **Privacy & security:** minimize data collected; encrypt sensitive data;
