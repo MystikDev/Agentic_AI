@@ -12,13 +12,16 @@ import {
 } from "react-native";
 import { theme } from "../theme";
 import { IntensityDial } from "../components/IntensityDial";
+import { ProfileModal } from "../components/ProfileModal";
 import {
   streamCoachReply,
   fetchPersona,
   type ChatMessage,
   type VoiceProfile,
+  type AthleteProfile,
 } from "../api/coach";
 import { speak, stopSpeaking, drainSentences, DEFAULT_VOICE } from "../speech";
+import { loadProfile, saveProfile, forRequest, EMPTY_PROFILE } from "../profile";
 
 const GREETING: ChatMessage = {
   role: "assistant",
@@ -32,7 +35,19 @@ export function CoachScreen() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [voiceOn, setVoiceOn] = useState(true);
+  const [profile, setProfile] = useState<AthleteProfile>(EMPTY_PROFILE);
+  const [profileOpen, setProfileOpen] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+
+  // Load the saved profile once on mount.
+  useEffect(() => {
+    loadProfile().then(setProfile);
+  }, []);
+
+  const onSaveProfile = useCallback((p: AthleteProfile) => {
+    setProfile(p);
+    saveProfile(p).catch(() => {/* best-effort local persistence */});
+  }, []);
 
   // Refs the streaming callback reads so it always sees current values (no stale closure).
   const voiceRef = useRef<VoiceProfile>(DEFAULT_VOICE);
@@ -79,7 +94,11 @@ export function CoachScreen() {
 
     try {
       await streamCoachReply(
-        { intensity, messages: history.filter((m) => m.content.length > 0) },
+        {
+          intensity,
+          profile: forRequest(profile),
+          messages: history.filter((m) => m.content.length > 0),
+        },
         (delta) => {
           // Render the token.
           setMessages((prev) => {
@@ -118,7 +137,7 @@ export function CoachScreen() {
     } finally {
       setBusy(false);
     }
-  }, [input, busy, messages, intensity]);
+  }, [input, busy, messages, intensity, profile]);
 
   return (
     <KeyboardAvoidingView
@@ -128,13 +147,22 @@ export function CoachScreen() {
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <Text style={styles.title}>FitCoach</Text>
-          <TouchableOpacity
-            style={[styles.voiceBtn, !voiceOn && styles.voiceBtnOff]}
-            onPress={toggleVoice}
-            accessibilityLabel={voiceOn ? "Mute coach voice" : "Unmute coach voice"}
-          >
-            <Text style={styles.voiceBtnText}>{voiceOn ? "🔊 Voice" : "🔇 Muted"}</Text>
-          </TouchableOpacity>
+          <View style={styles.headerBtns}>
+            <TouchableOpacity
+              style={styles.iconBtn}
+              onPress={() => setProfileOpen(true)}
+              accessibilityLabel="Edit your profile"
+            >
+              <Text style={styles.iconBtnText}>👤 Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.iconBtn, !voiceOn && styles.iconBtnOff]}
+              onPress={toggleVoice}
+              accessibilityLabel={voiceOn ? "Mute coach voice" : "Unmute coach voice"}
+            >
+              <Text style={styles.iconBtnText}>{voiceOn ? "🔊 Voice" : "🔇 Muted"}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         <IntensityDial intensity={intensity} label={label} onChange={setIntensity} />
       </View>
@@ -180,6 +208,13 @@ export function CoachScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      <ProfileModal
+        visible={profileOpen}
+        initial={profile}
+        onSave={onSaveProfile}
+        onClose={() => setProfileOpen(false)}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -189,14 +224,15 @@ const styles = StyleSheet.create({
   header: { paddingTop: theme.spacing(7), paddingHorizontal: theme.spacing(2), gap: theme.spacing(1.5) },
   titleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   title: { color: theme.colors.text, fontSize: 28, fontWeight: "800", letterSpacing: 0.5 },
-  voiceBtn: {
+  headerBtns: { flexDirection: "row", gap: theme.spacing(1) },
+  iconBtn: {
     backgroundColor: theme.colors.surfaceAlt,
     borderRadius: theme.radius,
     paddingHorizontal: theme.spacing(1.5),
     paddingVertical: theme.spacing(0.75),
   },
-  voiceBtnOff: { opacity: 0.6 },
-  voiceBtnText: { color: theme.colors.text, fontWeight: "700", fontSize: 13 },
+  iconBtnOff: { opacity: 0.6 },
+  iconBtnText: { color: theme.colors.text, fontWeight: "700", fontSize: 13 },
   chat: { flex: 1, marginTop: theme.spacing(1) },
   chatContent: { padding: theme.spacing(2), gap: theme.spacing(1.5) },
   bubble: { maxWidth: "85%", borderRadius: theme.radius, padding: theme.spacing(1.5) },
