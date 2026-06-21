@@ -1,0 +1,49 @@
+# Render blueprint: deploys the FitCoach backend (Node web service) and the Expo
+# web app (static site) together. Demo mode by default — the only secret you set
+# is ANTHROPIC_API_KEY (in the Render dashboard). Add SUPABASE_* later for accounts
+# and durable storage.
+#
+# To deploy: push this repo to GitHub, then in Render → New → Blueprint, pick the
+# repo. Render reads this file and creates both services. See docs/DEPLOY.md.
+
+services:
+  # ---- Backend API ---------------------------------------------------------
+  - type: web
+    name: fitcoach-api
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false # secret — you enter this in the Render dashboard
+      - key: ALLOWED_ORIGINS
+        value: "*" # preview-friendly; tighten to the web app's URL later
+      # Leaving SUPABASE_* unset runs the API in demo mode (in-memory store).
+      # To enable accounts + persistence, add:
+      # - key: SUPABASE_URL
+      #   sync: false
+      # - key: SUPABASE_SERVICE_ROLE_KEY
+      #   sync: false
+
+  # ---- Web app (Expo static export) ----------------------------------------
+  - type: web
+    name: fitcoach-web
+    runtime: static
+    rootDir: app
+    buildCommand: npm install && npx expo export -p web
+    staticPublishPath: dist
+    envVars:
+      # Point the web build at the deployed API. Render injects the API service's
+      # host here; app.config.js prepends https://.
+      - key: API_BASE_URL
+        fromService:
+          type: web
+          name: fitcoach-api
+          property: host
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
