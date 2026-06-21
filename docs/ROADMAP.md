@@ -32,6 +32,12 @@ it as a sequence of thin, releasable slices rather than all at once.
   persona engine's `profile` block (now persisted server-side).
 
 ## Phase 2 — Tracking hub
+- ✅ **Coach awareness of logged data:** every coaching turn now includes a
+  concise, current snapshot of the athlete's recent workouts, today's nutrition,
+  and med/supplement adherence, so the coach references real activity ("you
+  haven't logged a meal yet today") instead of talking in a vacuum. Built as a
+  pure formatter (`server/src/coach/context.ts`) + a best-effort fetcher that
+  never blocks a reply. This is what ties the separate tabs into one product.
 - ✅ **Workout logging:** log a session of sets (exercise / weight / reps, with
   bodyweight support) and see your history, persisted per user. New "Workouts" tab
   alongside the Coach. *Next:* progress charts (volume/PRs over time), edit/delete,

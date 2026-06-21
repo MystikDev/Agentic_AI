@@ -20,7 +20,7 @@ export async function streamCoachReply(
   onText: (delta: string) => void,
   signal?: AbortSignal,
 ): Promise<string> {
-  const system = buildSystemPrompt(req.intensity, req.profile);
+  const system = buildSystemPrompt(req.intensity, req.profile, req.context);
 
   const stream = client.messages.stream(
     {
