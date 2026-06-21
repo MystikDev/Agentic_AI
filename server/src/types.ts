@@ -87,3 +87,19 @@ export const CreateMealSchema = z
   .strict();
 
 export type CreateMeal = z.infer<typeof CreateMealSchema>;
+
+// ---- Medications & supplements ---------------------------------------------
+
+export const MedicationKindSchema = z.enum(["medication", "supplement"]);
+
+export const CreateMedicationSchema = z
+  .object({
+    name: z.string().min(1).max(120),
+    kind: MedicationKindSchema.default("supplement"),
+    dosage: z.string().max(80).optional(),
+    schedule: z.string().max(120).optional(),
+  })
+  .strict();
+
+export type MedicationKind = z.infer<typeof MedicationKindSchema>;
+export type CreateMedication = z.infer<typeof CreateMedicationSchema>;
