@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt } from "./persona.js";
-import type { CoachRequest } from "../types.js";
+import type { CoachInvocation } from "../types.js";
 
 const client = new Anthropic(); // reads ANTHROPIC_API_KEY from the environment
 
@@ -16,7 +16,7 @@ const MODEL = "claude-opus-4-8";
  * `onText` is called with each text delta as it arrives. Returns the final full text.
  */
 export async function streamCoachReply(
-  req: CoachRequest,
+  req: CoachInvocation,
   onText: (delta: string) => void,
   signal?: AbortSignal,
 ): Promise<string> {

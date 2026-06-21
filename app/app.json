@@ -20,7 +20,9 @@
       "bundler": "metro"
     },
     "extra": {
-      "apiBaseUrl": "http://localhost:8787"
+      "apiBaseUrl": "http://localhost:8787",
+      "supabaseUrl": "https://YOUR-PROJECT.supabase.co",
+      "supabaseAnonKey": "YOUR-ANON-KEY"
     }
   }
 }

@@ -24,16 +24,27 @@ export const ChatMessageSchema = z
   })
   .strict();
 
-export const CoachRequestSchema = z
+/**
+ * A single coaching turn. The client sends only the new user message plus the
+ * conversation it belongs to (omit to start a new one); prior history and the
+ * athlete profile are loaded server-side from the database.
+ */
+export const ChatTurnSchema = z
   .object({
+    conversationId: z.string().uuid().optional(),
     intensity: IntensitySchema,
-    profile: AthleteProfileSchema.optional(),
-    /** Full prior conversation (the API is stateless; client resends history). */
-    messages: z.array(ChatMessageSchema).min(1).max(100),
+    message: z.string().min(1).max(8000),
   })
   .strict();
 
 export type Intensity = z.infer<typeof IntensitySchema>;
 export type AthleteProfile = z.infer<typeof AthleteProfileSchema>;
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
-export type CoachRequest = z.infer<typeof CoachRequestSchema>;
+export type ChatTurn = z.infer<typeof ChatTurnSchema>;
+
+/** What the model layer needs to produce a reply (assembled from DB + request). */
+export interface CoachInvocation {
+  intensity: Intensity;
+  profile?: AthleteProfile;
+  messages: ChatMessage[];
+}

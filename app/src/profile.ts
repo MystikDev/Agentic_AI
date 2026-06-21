@@ -1,13 +1,10 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { AthleteProfile } from "./api/coach";
 
 /**
- * Athlete profile persistence. Stored on-device for now (no account required to
- * try the app); moves server-side when auth lands in Phase 1. The shape matches
- * the server's `AthleteProfile` so it can be sent straight into a coach request.
+ * Profile helpers. Persistence now lives on the server (see api/coach.ts:
+ * getProfile/saveProfile); this module only holds the empty value and the
+ * text<->list conversions the editor UI needs.
  */
-
-const KEY = "fitcoach.profile.v1";
 
 export const EMPTY_PROFILE: AthleteProfile = {
   name: "",
@@ -16,23 +13,9 @@ export const EMPTY_PROFILE: AthleteProfile = {
   constraints: [],
 };
 
-export async function loadProfile(): Promise<AthleteProfile> {
-  try {
-    const raw = await AsyncStorage.getItem(KEY);
-    if (!raw) return EMPTY_PROFILE;
-    return { ...EMPTY_PROFILE, ...(JSON.parse(raw) as AthleteProfile) };
-  } catch {
-    return EMPTY_PROFILE;
-  }
-}
-
-export async function saveProfile(profile: AthleteProfile): Promise<void> {
-  await AsyncStorage.setItem(KEY, JSON.stringify(profile));
-}
-
 /**
- * Strip empty fields so we only send the coach what's actually filled in.
- * Returns undefined when nothing is set (keeps the request lean).
+ * Strip empty fields so we only persist/send what's actually filled in.
+ * Returns undefined when nothing is set.
  */
 export function forRequest(profile: AthleteProfile): AthleteProfile | undefined {
   const cleaned: AthleteProfile = {};

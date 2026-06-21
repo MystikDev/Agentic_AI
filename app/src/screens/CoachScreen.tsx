@@ -14,14 +14,19 @@ import { theme } from "../theme";
 import { IntensityDial } from "../components/IntensityDial";
 import { ProfileModal } from "../components/ProfileModal";
 import {
-  streamCoachReply,
+  streamCoachTurn,
   fetchPersona,
+  getProfile,
+  saveProfile,
+  listConversations,
+  getConversationMessages,
   type ChatMessage,
   type VoiceProfile,
   type AthleteProfile,
 } from "../api/coach";
 import { speak, stopSpeaking, drainSentences, DEFAULT_VOICE } from "../speech";
-import { loadProfile, saveProfile, forRequest, EMPTY_PROFILE } from "../profile";
+import { forRequest, EMPTY_PROFILE } from "../profile";
+import { supabase } from "../supabase";
 
 const GREETING: ChatMessage = {
   role: "assistant",
@@ -34,20 +39,12 @@ export function CoachScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(true);
   const [voiceOn, setVoiceOn] = useState(true);
   const [profile, setProfile] = useState<AthleteProfile>(EMPTY_PROFILE);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [conversationId, setConversationId] = useState<string | undefined>(undefined);
   const scrollRef = useRef<ScrollView>(null);
-
-  // Load the saved profile once on mount.
-  useEffect(() => {
-    loadProfile().then(setProfile);
-  }, []);
-
-  const onSaveProfile = useCallback((p: AthleteProfile) => {
-    setProfile(p);
-    saveProfile(p).catch(() => {/* best-effort local persistence */});
-  }, []);
 
   // Refs the streaming callback reads so it always sees current values (no stale closure).
   const voiceRef = useRef<VoiceProfile>(DEFAULT_VOICE);
@@ -58,8 +55,33 @@ export function CoachScreen() {
     voiceOnRef.current = voiceOn;
   }, [voiceOn]);
 
-  // Keep the persona label + voice in sync with the dial. Debounced so dragging the
-  // slider doesn't hammer the endpoint.
+  // On mount: load the server-side profile and the most recent conversation.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const [p, convos] = await Promise.all([getProfile(), listConversations()]);
+        if (!active) return;
+        setProfile({ ...EMPTY_PROFILE, ...p });
+        if (convos.length) {
+          const recent = convos[0];
+          setConversationId(recent.id);
+          if (recent.intensity) setIntensity(recent.intensity);
+          const history = await getConversationMessages(recent.id);
+          if (active) setMessages(history.length ? history : [GREETING]);
+        }
+      } catch {
+        /* offline / not configured — start fresh with the greeting */
+      } finally {
+        if (active) setLoadingHistory(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Keep the persona label + voice in sync with the dial (debounced).
   useEffect(() => {
     const t = setTimeout(() => {
       fetchPersona(intensity)
@@ -80,47 +102,62 @@ export function CoachScreen() {
     });
   }, []);
 
+  const onSaveProfile = useCallback((p: AthleteProfile) => {
+    setProfile(p);
+    saveProfile(forRequest(p) ?? {}).catch(() => {/* best-effort */});
+  }, []);
+
+  const startNewConversation = useCallback(() => {
+    stopSpeaking();
+    setConversationId(undefined);
+    setMessages([GREETING]);
+  }, []);
+
+  const signOut = useCallback(() => {
+    stopSpeaking();
+    supabase.auth.signOut();
+  }, []);
+
   const send = useCallback(async () => {
     const text = input.trim();
     if (!text || busy) return;
 
-    stopSpeaking(); // cut off any previous reply still being read
+    stopSpeaking();
     speechBufRef.current = "";
 
-    const history: ChatMessage[] = [...messages, { role: "user", content: text }];
-    setMessages([...history, { role: "assistant", content: "" }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: text },
+      { role: "assistant", content: "" },
+    ]);
     setInput("");
     setBusy(true);
 
     try {
-      await streamCoachReply(
+      await streamCoachTurn(
+        { conversationId, intensity, message: text },
         {
-          intensity,
-          profile: forRequest(profile),
-          messages: history.filter((m) => m.content.length > 0),
-        },
-        (delta) => {
-          // Render the token.
-          setMessages((prev) => {
-            const next = [...prev];
-            next[next.length - 1] = {
-              role: "assistant",
-              content: next[next.length - 1].content + delta,
-            };
-            return next;
-          });
-          scrollRef.current?.scrollToEnd({ animated: true });
+          onMeta: (id) => setConversationId(id),
+          onToken: (delta) => {
+            setMessages((prev) => {
+              const next = [...prev];
+              next[next.length - 1] = {
+                role: "assistant",
+                content: next[next.length - 1].content + delta,
+              };
+              return next;
+            });
+            scrollRef.current?.scrollToEnd({ animated: true });
 
-          // Speak complete sentences as they finish, so the coach talks live.
-          if (voiceOnRef.current) {
-            speechBufRef.current += delta;
-            const { sentences, rest } = drainSentences(speechBufRef.current);
-            speechBufRef.current = rest;
-            for (const s of sentences) speak(s, voiceRef.current);
-          }
+            if (voiceOnRef.current) {
+              speechBufRef.current += delta;
+              const { sentences, rest } = drainSentences(speechBufRef.current);
+              speechBufRef.current = rest;
+              for (const s of sentences) speak(s, voiceRef.current);
+            }
+          },
         },
       );
-      // Flush any trailing partial sentence.
       if (voiceOnRef.current && speechBufRef.current.trim()) {
         speak(speechBufRef.current, voiceRef.current);
       }
@@ -137,7 +174,7 @@ export function CoachScreen() {
     } finally {
       setBusy(false);
     }
-  }, [input, busy, messages, intensity, profile]);
+  }, [input, busy, conversationId, intensity]);
 
   return (
     <KeyboardAvoidingView
@@ -147,43 +184,50 @@ export function CoachScreen() {
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <Text style={styles.title}>FitCoach</Text>
-          <View style={styles.headerBtns}>
-            <TouchableOpacity
-              style={styles.iconBtn}
-              onPress={() => setProfileOpen(true)}
-              accessibilityLabel="Edit your profile"
-            >
-              <Text style={styles.iconBtnText}>👤 Profile</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.iconBtn, !voiceOn && styles.iconBtnOff]}
-              onPress={toggleVoice}
-              accessibilityLabel={voiceOn ? "Mute coach voice" : "Unmute coach voice"}
-            >
-              <Text style={styles.iconBtnText}>{voiceOn ? "🔊 Voice" : "🔇 Muted"}</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity onPress={signOut} accessibilityLabel="Sign out">
+            <Text style={styles.signOut}>Sign out</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.headerBtns}>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => setProfileOpen(true)}>
+            <Text style={styles.iconBtnText}>👤 Profile</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.iconBtn, !voiceOn && styles.iconBtnOff]}
+            onPress={toggleVoice}
+          >
+            <Text style={styles.iconBtnText}>{voiceOn ? "🔊 Voice" : "🔇 Muted"}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconBtn} onPress={startNewConversation}>
+            <Text style={styles.iconBtnText}>＋ New</Text>
+          </TouchableOpacity>
         </View>
         <IntensityDial intensity={intensity} label={label} onChange={setIntensity} />
       </View>
 
-      <ScrollView
-        ref={scrollRef}
-        style={styles.chat}
-        contentContainerStyle={styles.chatContent}
-        onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
-      >
-        {messages.map((m, i) => (
-          <View
-            key={i}
-            style={[styles.bubble, m.role === "user" ? styles.userBubble : styles.coachBubble]}
-          >
-            <Text style={styles.bubbleText}>
-              {m.content || (busy && i === messages.length - 1 ? "…" : "")}
-            </Text>
-          </View>
-        ))}
-      </ScrollView>
+      {loadingHistory ? (
+        <View style={styles.center}>
+          <ActivityIndicator color={theme.colors.accent} />
+        </View>
+      ) : (
+        <ScrollView
+          ref={scrollRef}
+          style={styles.chat}
+          contentContainerStyle={styles.chatContent}
+          onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
+        >
+          {messages.map((m, i) => (
+            <View
+              key={i}
+              style={[styles.bubble, m.role === "user" ? styles.userBubble : styles.coachBubble]}
+            >
+              <Text style={styles.bubbleText}>
+                {m.content || (busy && i === messages.length - 1 ? "…" : "")}
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
+      )}
 
       <View style={styles.inputRow}>
         <TextInput
@@ -224,6 +268,7 @@ const styles = StyleSheet.create({
   header: { paddingTop: theme.spacing(7), paddingHorizontal: theme.spacing(2), gap: theme.spacing(1.5) },
   titleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   title: { color: theme.colors.text, fontSize: 28, fontWeight: "800", letterSpacing: 0.5 },
+  signOut: { color: theme.colors.textDim, fontSize: 14, fontWeight: "600" },
   headerBtns: { flexDirection: "row", gap: theme.spacing(1) },
   iconBtn: {
     backgroundColor: theme.colors.surfaceAlt,
@@ -233,6 +278,7 @@ const styles = StyleSheet.create({
   },
   iconBtnOff: { opacity: 0.6 },
   iconBtnText: { color: theme.colors.text, fontWeight: "700", fontSize: 13 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
   chat: { flex: 1, marginTop: theme.spacing(1) },
   chatContent: { padding: theme.spacing(2), gap: theme.spacing(1.5) },
   bubble: { maxWidth: "85%", borderRadius: theme.radius, padding: theme.spacing(1.5) },

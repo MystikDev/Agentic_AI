@@ -19,10 +19,16 @@ it as a sequence of thin, releasable slices rather than all at once.
   streaming body on all platforms. Move to `react-native-sse` or a WebSocket so
   token streaming is reliable on device (the current client falls back to the
   final `done` event when no stream reader is available).
-- **Auth + persistence:** user accounts; store conversations, profile, goals
-  server-side. Pick a backend store (Postgres/Supabase) and add auth.
-- **Profile onboarding:** capture goals, experience, and injuries to feed the
-  persona engine's `profile` block.
+- ✅ **Auth + persistence (Supabase):** email/password accounts; athlete profile
+  and conversation history stored server-side in Postgres. The app authenticates
+  with Supabase directly and sends its token to the backend, which verifies it and
+  owns all DB writes via the service-role key (RLS as defense-in-depth). The chat
+  endpoint loads history + profile server-side and persists each turn. See
+  `docs/SUPABASE.md`. *Next:* OAuth/magic-link sign-in; a conversation list/picker
+  UI (the backend already serves it); local JWKS token verification to drop the
+  per-request auth round trip.
+- ✅ **Profile onboarding:** captured goals, experience, and injuries feed the
+  persona engine's `profile` block (now persisted server-side).
 
 ## Phase 2 — Tracking hub
 - Workouts, sets/reps logging, progress charts.
