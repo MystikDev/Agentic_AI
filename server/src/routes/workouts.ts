@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { CreateWorkoutSchema } from "../types.js";
 import { requireAuth, type AuthedRequest } from "../auth.js";
-import { createWorkout, listWorkouts } from "../db.js";
+import { createWorkout, listWorkouts } from "../store/index.js";
 
 export const workoutsRouter = Router();
 

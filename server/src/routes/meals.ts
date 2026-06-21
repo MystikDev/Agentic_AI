@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { CreateMealSchema } from "../types.js";
 import { requireAuth, type AuthedRequest } from "../auth.js";
-import { createMeal, listMeals } from "../db.js";
+import { createMeal, listMeals } from "../store/index.js";
 
 export const mealsRouter = Router();
 

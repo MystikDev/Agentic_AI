@@ -58,6 +58,13 @@ it as a sequence of thin, releasable slices rather than all at once.
 - Regulatory review for medication tracking + any health claims (wellness vs.
   medical-device line, GDPR/CCPA, platform health-data policies).
 
+## Developer experience
+- ✅ **Demo mode:** with Supabase unconfigured, the backend uses an in-memory
+  store under a demo user and the app skips login — so the whole product runs with
+  just an Anthropic key (data resets on restart). Storage is abstracted behind a
+  facade (`server/src/store/`) so the Supabase path is untouched. *Next:* a hosted
+  preview (deploy the backend + Expo web) for a shareable link.
+
 ## Cross-cutting (start early, never "later")
 - **Privacy & security:** minimize data collected; encrypt sensitive data;
   clear consent. Especially before camera and medication features.

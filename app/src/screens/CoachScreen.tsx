@@ -26,7 +26,7 @@ import {
 } from "../api/coach";
 import { speak, stopSpeaking, drainSentences, DEFAULT_VOICE } from "../speech";
 import { forRequest, EMPTY_PROFILE } from "../profile";
-import { supabase } from "../supabase";
+import { supabase, supabaseConfigured } from "../supabase";
 
 const GREETING: ChatMessage = {
   role: "assistant",
@@ -184,9 +184,13 @@ export function CoachScreen() {
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <Text style={styles.title}>FitCoach</Text>
-          <TouchableOpacity onPress={signOut} accessibilityLabel="Sign out">
-            <Text style={styles.signOut}>Sign out</Text>
-          </TouchableOpacity>
+          {supabaseConfigured ? (
+            <TouchableOpacity onPress={signOut} accessibilityLabel="Sign out">
+              <Text style={styles.signOut}>Sign out</Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={styles.signOut}>Demo mode</Text>
+          )}
         </View>
         <View style={styles.headerBtns}>
           <TouchableOpacity style={styles.iconBtn} onPress={() => setProfileOpen(true)}>

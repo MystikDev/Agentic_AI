@@ -13,13 +13,19 @@ export interface AuthedRequest extends Request {
  * traffic this can later be swapped for local JWKS verification to avoid the round
  * trip — see docs/SUPABASE.md.
  */
+/** Fixed user id used for all requests when running without Supabase (demo mode). */
+export const DEMO_USER_ID = "demo-user";
+
 export async function requireAuth(
   req: AuthedRequest,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
+  // Demo mode: no Supabase configured → run as a single shared demo user so the
+  // app is usable with just an Anthropic key. See docs/SUPABASE.md / README.
   if (!supabaseConfigured) {
-    res.status(503).json({ error: "auth not configured on the server" });
+    req.userId = DEMO_USER_ID;
+    next();
     return;
   }
 

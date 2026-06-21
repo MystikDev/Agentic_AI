@@ -1,16 +1,17 @@
-import { supabase } from "./supabase.js";
+import { supabase } from "../supabase.js";
 import type {
   AthleteProfile,
   ChatMessage,
   CreateWorkout,
   WorkoutSet,
   CreateMeal,
-} from "./types.js";
+} from "../types.js";
+import type { ConversationSummary, Workout, Meal } from "./shared.js";
 
 /**
- * Data access. Every function scopes by userId because the service-role client
- * bypasses row-level security — userId filtering here is the real authorization
- * boundary, with the SQL RLS policies as defense-in-depth.
+ * Supabase-backed storage. Every function scopes by userId because the
+ * service-role client bypasses row-level security — userId filtering here is the
+ * real authorization boundary, with the SQL RLS policies as defense-in-depth.
  */
 
 export async function getProfile(userId: string): Promise<AthleteProfile | null> {
@@ -39,13 +40,6 @@ export async function upsertProfile(userId: string, p: AthleteProfile): Promise<
     updated_at: new Date().toISOString(),
   });
   if (error) throw new Error(error.message);
-}
-
-export interface ConversationSummary {
-  id: string;
-  title: string | null;
-  intensity: number | null;
-  updated_at: string;
 }
 
 export async function listConversations(userId: string): Promise<ConversationSummary[]> {
@@ -107,27 +101,11 @@ export async function appendMessage(
     .from("messages")
     .insert({ user_id: userId, conversation_id: conversationId, role, content });
   if (error) throw new Error(error.message);
-  // Bump the conversation so it sorts to the top of the list.
   await supabase
     .from("conversations")
     .update({ updated_at: new Date().toISOString() })
     .eq("id", conversationId)
     .eq("user_id", userId);
-}
-
-/** Derive a short title from the first user message. */
-export function titleFrom(message: string): string {
-  const t = message.trim().replace(/\s+/g, " ");
-  return t.length <= 48 ? t : `${t.slice(0, 47)}…`;
-}
-
-// ---- Workouts --------------------------------------------------------------
-
-export interface Workout {
-  id: string;
-  performedAt: string;
-  notes: string | null;
-  sets: WorkoutSet[];
 }
 
 export async function createWorkout(userId: string, w: CreateWorkout): Promise<string> {
@@ -153,7 +131,6 @@ export async function createWorkout(userId: string, w: CreateWorkout): Promise<s
   }));
   const { error: setsError } = await supabase.from("workout_sets").insert(rows);
   if (setsError) {
-    // Best-effort cleanup so we don't leave an empty workout behind.
     await supabase.from("workouts").delete().eq("id", workoutId).eq("user_id", userId);
     throw new Error(setsError.message);
   }
@@ -196,18 +173,6 @@ export async function listWorkouts(userId: string, limit = 50): Promise<Workout[
     notes: (w.notes as string | null) ?? null,
     sets: byWorkout.get(w.id as string) ?? [],
   }));
-}
-
-// ---- Meals -----------------------------------------------------------------
-
-export interface Meal {
-  id: string;
-  eatenAt: string;
-  description: string;
-  calories: number | null;
-  proteinG: number | null;
-  carbsG: number | null;
-  fatG: number | null;
 }
 
 const num = (v: unknown): number | null => (v == null ? null : Number(v));

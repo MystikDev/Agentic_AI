@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { AthleteProfileSchema } from "../types.js";
 import { requireAuth, type AuthedRequest } from "../auth.js";
-import { getProfile, upsertProfile } from "../db.js";
+import { getProfile, upsertProfile } from "../store/index.js";
 
 export const profileRouter = Router();
 

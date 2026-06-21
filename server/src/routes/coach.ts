@@ -10,7 +10,7 @@ import {
   createConversation,
   ownsConversation,
   titleFrom,
-} from "../db.js";
+} from "../store/index.js";
 
 export const coachRouter = Router();
 

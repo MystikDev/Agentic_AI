@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { requireAuth, type AuthedRequest } from "../auth.js";
-import { listConversations, getMessages, ownsConversation } from "../db.js";
+import { listConversations, getMessages, ownsConversation } from "../store/index.js";
 
 export const conversationsRouter = Router();
 

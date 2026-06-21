@@ -24,7 +24,30 @@ Accounts, the athlete profile, and conversation history are backed by
 before running — or skip it to try the coach without persistence (the public
 persona endpoint works; authenticated features return `503`).
 
-## Quick start
+## Try it in ~5 minutes (demo mode, no Supabase)
+
+Want to click around and give feedback without standing up a database? Run in
+**demo mode**: leave Supabase unconfigured and the app skips login, using an
+in-memory store under a single demo user (data resets when the server restarts).
+You only need an Anthropic API key for the coach.
+
+```bash
+# 1. Backend
+cd server
+cp .env.example .env        # set ONLY ANTHROPIC_API_KEY; leave SUPABASE_* as-is
+npm install
+npm run dev                 # prints a Supabase warning — expected in demo mode
+
+# 2. App (new terminal) — fastest is the web build
+cd app
+npm install
+npm run web                 # opens in your browser; no login screen in demo mode
+```
+
+The coach, voice, profile, workout logging, and diet logging all work. Sign-in
+and durable storage come with the full setup below.
+
+## Full setup (accounts + durable storage)
 
 First, set up Supabase once: follow [`docs/SUPABASE.md`](docs/SUPABASE.md)
 (create the project, run the schema, copy the keys).

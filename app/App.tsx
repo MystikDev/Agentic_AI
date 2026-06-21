@@ -4,14 +4,16 @@ import { StatusBar } from "expo-status-bar";
 import type { Session } from "@supabase/supabase-js";
 import { MainTabs } from "./src/screens/MainTabs";
 import { AuthScreen } from "./src/auth/AuthScreen";
-import { supabase } from "./src/supabase";
+import { supabase, supabaseConfigured } from "./src/supabase";
 import { theme } from "./src/theme";
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  // In demo mode (no Supabase) there's no auth step — go straight to the app.
+  const [loading, setLoading] = useState(supabaseConfigured);
 
   useEffect(() => {
+    if (!supabaseConfigured) return;
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);
@@ -22,6 +24,8 @@ export default function App() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  const showApp = !supabaseConfigured || session;
+
   return (
     <SafeAreaView style={styles.root}>
       <StatusBar style="light" />
@@ -29,7 +33,7 @@ export default function App() {
         <View style={styles.center}>
           <ActivityIndicator color={theme.colors.accent} />
         </View>
-      ) : session ? (
+      ) : showApp ? (
         <MainTabs />
       ) : (
         <AuthScreen />
