@@ -77,9 +77,11 @@ export type StreamHandlers = {
   onMeta?: (conversationId: string) => void;
   /** Fires for each streamed text delta. */
   onToken: (delta: string) => void;
+  /** Fires when the coach logs something (workout/meal/supplement). */
+  onTool?: (summary: string) => void;
 };
 
-type CoachEvent = "meta" | "token" | "done" | "coach_error";
+type CoachEvent = "meta" | "token" | "tool" | "done" | "coach_error";
 
 /**
  * Send one coaching turn and stream the reply over Server-Sent Events using
@@ -127,6 +129,10 @@ export function streamCoachTurn(
       const delta = (JSON.parse(e.data) as { text: string }).text;
       full += delta;
       handlers.onToken(delta);
+    });
+
+    es.addEventListener("tool", (e) => {
+      if (e.data) handlers.onTool?.((JSON.parse(e.data) as { summary: string }).summary);
     });
 
     es.addEventListener("done", (e) => {
