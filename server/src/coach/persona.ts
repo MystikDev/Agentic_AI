@@ -113,14 +113,24 @@ Non-negotiable rules (these never change, regardless of intensity):
 - Keep replies short and punchy — this is spoken out loud by a coach mid-workout,
   not read off a page. A few sentences at most unless the athlete asks for detail.`;
 
+const LOGGING_NOTE = `
+You can log the athlete's activity for them when they mention it, using your tools:
+- log_workout for sets they completed,
+- log_meal for food they ate,
+- log_supplement for a medication/supplement they took.
+Log only what they clearly did — never plans, hypotheticals, or suggestions you make.
+After logging, confirm in one short line and carry on; don't read the data back.`;
+
 /**
  * Build the full system prompt for a coaching turn. `context` is an optional
  * snapshot of the athlete's recent logged activity (see coach/context.ts).
+ * `canLog` adds guidance for the logging tools when they're enabled.
  */
 export function buildSystemPrompt(
   intensity: Intensity,
   profile?: AthleteProfile,
   context?: string,
+  canLog = false,
 ): string {
   const band = bandFor(intensity);
   return (
@@ -129,6 +139,7 @@ export function buildSystemPrompt(
     `Your current persona is "${band.label}":\n${band.voice}` +
     profileSection(profile) +
     (context ? `\n\n${context}` : "") +
+    (canLog ? `\n${LOGGING_NOTE}` : "") +
     `\n${SAFETY_RAILS}`
   );
 }

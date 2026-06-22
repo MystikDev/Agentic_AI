@@ -28,7 +28,10 @@ import { speak, stopSpeaking, drainSentences, DEFAULT_VOICE } from "../speech";
 import { forRequest, EMPTY_PROFILE } from "../profile";
 import { supabase, supabaseConfigured } from "../supabase";
 
-const GREETING: ChatMessage = {
+/** Chat items: user/assistant turns, plus local-only "system" notes for logging. */
+type Msg = { role: "user" | "assistant" | "system"; content: string };
+
+const GREETING: Msg = {
   role: "assistant",
   content: "Ready when you are. Tell me what we're training today.",
 };
@@ -36,7 +39,7 @@ const GREETING: ChatMessage = {
 export function CoachScreen() {
   const [intensity, setIntensity] = useState(5);
   const [label, setLabel] = useState("The Steady Coach");
-  const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
+  const [messages, setMessages] = useState<Msg[]>([GREETING]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
@@ -138,6 +141,14 @@ export function CoachScreen() {
         { conversationId, intensity, message: text },
         {
           onMeta: (id) => setConversationId(id),
+          onTool: (summary) => {
+            // Insert a logging note just before the streaming assistant bubble.
+            setMessages((prev) => {
+              const next = [...prev];
+              next.splice(Math.max(0, next.length - 1), 0, { role: "system", content: summary });
+              return next;
+            });
+          },
           onToken: (delta) => {
             setMessages((prev) => {
               const next = [...prev];
@@ -220,16 +231,22 @@ export function CoachScreen() {
           contentContainerStyle={styles.chatContent}
           onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
         >
-          {messages.map((m, i) => (
-            <View
-              key={i}
-              style={[styles.bubble, m.role === "user" ? styles.userBubble : styles.coachBubble]}
-            >
-              <Text style={styles.bubbleText}>
-                {m.content || (busy && i === messages.length - 1 ? "…" : "")}
-              </Text>
-            </View>
-          ))}
+          {messages.map((m, i) =>
+            m.role === "system" ? (
+              <View key={i} style={styles.systemNote}>
+                <Text style={styles.systemNoteText}>✓ {m.content}</Text>
+              </View>
+            ) : (
+              <View
+                key={i}
+                style={[styles.bubble, m.role === "user" ? styles.userBubble : styles.coachBubble]}
+              >
+                <Text style={styles.bubbleText}>
+                  {m.content || (busy && i === messages.length - 1 ? "…" : "")}
+                </Text>
+              </View>
+            ),
+          )}
         </ScrollView>
       )}
 
@@ -289,6 +306,14 @@ const styles = StyleSheet.create({
   userBubble: { alignSelf: "flex-end", backgroundColor: theme.colors.user },
   coachBubble: { alignSelf: "flex-start", backgroundColor: theme.colors.coach },
   bubbleText: { color: theme.colors.text, fontSize: 16, lineHeight: 22 },
+  systemNote: {
+    alignSelf: "center",
+    backgroundColor: theme.colors.surfaceAlt,
+    borderRadius: theme.radius,
+    paddingHorizontal: theme.spacing(1.5),
+    paddingVertical: theme.spacing(0.75),
+  },
+  systemNoteText: { color: theme.colors.accent, fontSize: 13, fontWeight: "600" },
   inputRow: {
     flexDirection: "row",
     padding: theme.spacing(1.5),

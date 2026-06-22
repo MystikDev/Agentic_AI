@@ -3,6 +3,7 @@ import { ChatTurnSchema } from "../types.js";
 import { streamCoachReply } from "../coach/chat.js";
 import { personaLabel, voiceProfile } from "../coach/persona.js";
 import { buildAthleteContext } from "../coach/context.js";
+import { executeCoachTool } from "../coach/tools.js";
 import { requireAuth, type AuthedRequest } from "../auth.js";
 import {
   getProfile,
@@ -38,6 +39,7 @@ coachRouter.get("/persona", (req, res) => {
  * reply, and streams the reply back as Server-Sent Events:
  *   event: meta         data: {"conversationId": "..."}   (once, first)
  *   event: token        data: {"text": "..."}             (many)
+ *   event: tool         data: {"summary": "Logged ..."}   (when the coach logs)
  *   event: done         data: {"text": "<full reply>"}
  *   event: coach_error  data: {"message": "..."}
  *
@@ -98,7 +100,11 @@ coachRouter.post("/chat", requireAuth, async (req: AuthedRequest, res) => {
         messages: [...history, { role: "user", content: message }],
         context,
       },
-      (delta) => send("token", { text: delta }),
+      {
+        onText: (delta) => send("token", { text: delta }),
+        onTool: (summary) => send("tool", { summary }),
+        runTool: (name, input) => executeCoachTool(userId, name, input),
+      },
       controller.signal,
     );
 

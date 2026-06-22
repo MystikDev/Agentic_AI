@@ -32,6 +32,10 @@ it as a sequence of thin, releasable slices rather than all at once.
   persona engine's `profile` block (now persisted server-side).
 
 ## Phase 2 — Tracking hub
+- ✅ **Coach can log for you (tool use):** tell the coach "I did 3×5 squats at 100
+  and took my creatine" and it logs the workout/meal/supplement via tool calls,
+  confirming inline (shown as a note in chat). Agentic loop server-side with a
+  turn cap; every tool input is zod-validated and scoped to the user.
 - ✅ **Coach awareness of logged data:** every coaching turn now includes a
   concise, current snapshot of the athlete's recent workouts, today's nutrition,
   and med/supplement adherence, so the coach references real activity ("you
