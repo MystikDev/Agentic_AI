@@ -24,6 +24,7 @@ export const createMedication = impl.createMedication;
 export const listMedications = impl.listMedications;
 export const ownsMedication = impl.ownsMedication;
 export const logIntake = impl.logIntake;
+export const listIntakesSince = impl.listIntakesSince;
 
 export { titleFrom } from "./shared.js";
-export type { ConversationSummary, Workout, Meal, Medication } from "./shared.js";
+export type { ConversationSummary, Workout, Meal, Medication, MedIntake } from "./shared.js";

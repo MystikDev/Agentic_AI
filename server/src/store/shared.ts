@@ -38,6 +38,12 @@ export interface Medication {
   lastTakenAt: string | null;
 }
 
+/** A single logged dose, used for reporting over a window. */
+export interface MedIntake {
+  medicationId: string;
+  takenAt: string;
+}
+
 /** Start of the current UTC day as an ISO string — the boundary for "taken today". */
 export function startOfUtcDay(now = new Date()): string {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();

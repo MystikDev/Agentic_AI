@@ -8,7 +8,7 @@ import type {
   CreateMedication,
   MedicationKind,
 } from "../types.js";
-import type { ConversationSummary, Workout, Meal, Medication } from "./shared.js";
+import type { ConversationSummary, Workout, Meal, Medication, MedIntake } from "./shared.js";
 import { startOfUtcDay } from "./shared.js";
 
 /**
@@ -291,4 +291,19 @@ export async function logIntake(userId: string, medicationId: string): Promise<v
     .from("medication_intakes")
     .insert({ user_id: userId, medication_id: medicationId });
   if (error) throw new Error(error.message);
+}
+
+export async function listIntakesSince(userId: string, sinceISO: string): Promise<MedIntake[]> {
+  const { data, error } = await supabase
+    .from("medication_intakes")
+    .select("medication_id, taken_at")
+    .eq("user_id", userId)
+    .gte("taken_at", sinceISO)
+    .order("taken_at", { ascending: false })
+    .limit(2000);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r) => ({
+    medicationId: r.medication_id as string,
+    takenAt: r.taken_at as string,
+  }));
 }

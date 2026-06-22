@@ -51,7 +51,10 @@ it as a sequence of thin, releasable slices rather than all at once.
   dosage, schedule), log each dose with a Take button, and see today's adherence
   ("Taken 2× today"). New "Meds" tab. *Next:* scheduled push reminders via
   expo-notifications (native only; no-op on web), and edit/deactivate.
-- Reporting/export (PDF/CSV summaries).
+- ✅ **Reporting/export:** a weekly summary (training volume + top lifts, nutrition
+  averages, med/supplement adherence %) on a new Report tab, with Share (native
+  share sheet) / copy-to-clipboard (web). Computed server-side as a pure,
+  unit-tested aggregator. *Next:* PDF/CSV export and selectable date ranges.
 
 ## Phase 3 — Camera form + rep tracking
 - Start with pose estimation via an existing engine (Apple Vision / MediaPipe /

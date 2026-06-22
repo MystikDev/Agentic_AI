@@ -5,8 +5,9 @@ import { CoachScreen } from "./CoachScreen";
 import { WorkoutsScreen } from "./WorkoutsScreen";
 import { DietScreen } from "./DietScreen";
 import { MedsScreen } from "./MedsScreen";
+import { ReportsScreen } from "./ReportsScreen";
 
-type Tab = "coach" | "workouts" | "diet" | "meds";
+type Tab = "coach" | "workouts" | "diet" | "meds" | "report";
 
 /**
  * Minimal two-tab shell (no navigation library yet). The signed-in app is the
@@ -25,8 +26,10 @@ export function MainTabs() {
           <WorkoutsScreen />
         ) : tab === "diet" ? (
           <DietScreen />
-        ) : (
+        ) : tab === "meds" ? (
           <MedsScreen />
+        ) : (
+          <ReportsScreen />
         )}
       </View>
       <View style={styles.tabBar}>
@@ -39,6 +42,7 @@ export function MainTabs() {
         />
         <TabButton label="Diet" icon="🍎" active={tab === "diet"} onPress={() => setTab("diet")} />
         <TabButton label="Meds" icon="💊" active={tab === "meds"} onPress={() => setTab("meds")} />
+        <TabButton label="Report" icon="📊" active={tab === "report"} onPress={() => setTab("report")} />
       </View>
     </View>
   );
