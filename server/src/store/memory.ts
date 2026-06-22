@@ -6,7 +6,7 @@ import type {
   CreateMeal,
   CreateMedication,
 } from "../types.js";
-import type { ConversationSummary, Workout, Meal, Medication } from "./shared.js";
+import type { ConversationSummary, Workout, Meal, Medication, MedIntake } from "./shared.js";
 import { startOfUtcDay } from "./shared.js";
 
 /**
@@ -195,4 +195,10 @@ export async function ownsMedication(userId: string, medicationId: string): Prom
 
 export async function logIntake(userId: string, medicationId: string): Promise<void> {
   intakes.push({ medicationId, userId, takenAt: new Date().toISOString() });
+}
+
+export async function listIntakesSince(userId: string, sinceISO: string): Promise<MedIntake[]> {
+  return intakes
+    .filter((it) => it.userId === userId && it.takenAt >= sinceISO)
+    .map((it) => ({ medicationId: it.medicationId, takenAt: it.takenAt }));
 }

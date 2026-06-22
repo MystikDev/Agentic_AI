@@ -14,7 +14,7 @@ server/   Node + TypeScript backend. Holds the Anthropic + Supabase service keys
           and conversation history. (The app never calls Claude directly — see
           docs/ARCHITECTURE.md for why.)
 app/      Expo (React Native) app for iOS + Android. Auth, coach chat + intensity
-          dial, and Workouts / Diet / Meds logging tabs.
+          dial, Workouts / Diet / Meds logging, and a weekly Report tab.
 supabase/ Database schema (migrations) for auth, persistence, and tracking.
 docs/     Architecture, roadmap, and Supabase setup.
 ```
