@@ -114,15 +114,21 @@ Non-negotiable rules (these never change, regardless of intensity):
   not read off a page. A few sentences at most unless the athlete asks for detail.`;
 
 /**
- * Build the full system prompt for a coaching turn.
+ * Build the full system prompt for a coaching turn. `context` is an optional
+ * snapshot of the athlete's recent logged activity (see coach/context.ts).
  */
-export function buildSystemPrompt(intensity: Intensity, profile?: AthleteProfile): string {
+export function buildSystemPrompt(
+  intensity: Intensity,
+  profile?: AthleteProfile,
+  context?: string,
+): string {
   const band = bandFor(intensity);
   return (
     `You are FitCoach, a personal training coach embedded in a fitness app. ` +
     `The user has set your intensity to ${intensity}/10.\n\n` +
     `Your current persona is "${band.label}":\n${band.voice}` +
     profileSection(profile) +
+    (context ? `\n\n${context}` : "") +
     `\n${SAFETY_RAILS}`
   );
 }

@@ -47,6 +47,8 @@ export interface CoachInvocation {
   intensity: Intensity;
   profile?: AthleteProfile;
   messages: ChatMessage[];
+  /** Optional snapshot of the athlete's recent logged activity. */
+  context?: string;
 }
 
 // ---- Workout logging -------------------------------------------------------

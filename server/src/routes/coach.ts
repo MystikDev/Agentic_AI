@@ -2,6 +2,7 @@ import { Router } from "express";
 import { ChatTurnSchema } from "../types.js";
 import { streamCoachReply } from "../coach/chat.js";
 import { personaLabel, voiceProfile } from "../coach/persona.js";
+import { buildAthleteContext } from "../coach/context.js";
 import { requireAuth, type AuthedRequest } from "../auth.js";
 import {
   getProfile,
@@ -83,9 +84,10 @@ coachRouter.post("/chat", requireAuth, async (req: AuthedRequest, res) => {
   try {
     send("meta", { conversationId });
 
-    const [profile, history] = await Promise.all([
+    const [profile, history, context] = await Promise.all([
       getProfile(userId),
       getMessages(userId, conversationId),
+      buildAthleteContext(userId),
     ]);
     await appendMessage(userId, conversationId, "user", message);
 
@@ -94,6 +96,7 @@ coachRouter.post("/chat", requireAuth, async (req: AuthedRequest, res) => {
         intensity,
         profile: profile ?? undefined,
         messages: [...history, { role: "user", content: message }],
+        context,
       },
       (delta) => send("token", { text: delta }),
       controller.signal,
